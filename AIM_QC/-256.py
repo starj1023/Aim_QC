@@ -3,52 +3,7 @@ from projectq.ops import H, CNOT, Measure, Toffoli, X, All, T, Tdag, S, Swap
 from projectq.backends import CircuitDrawer, ResourceCounter, ClassicalSimulator
 from projectq.meta import Loop, Compute, Uncompute, Control
 from Matrix_256 import Matrix1, Matrix2, Matrix3, Matrix4, Matrix5, Matrix6, vector_b
-
 import math
-
-
-def Round_constant_XOR(eng, k, rc, bit):
-    for i in range(bit):
-        if (rc >> i & 1):
-            X | k[i]
-
-def Matrix_Mul(eng, state0, state1, state2):
-
-    out0 = eng.allocate_qureg(256)
-    Matrix_Mul_lower(eng, state0, out0, Matrix1)
-
-    out1 = eng.allocate_qureg(256)
-    Matrix_Mul_upper(eng, out0, out1, Matrix2)
-
-    out2 = eng.allocate_qureg(256)
-    Matrix_Mul_lower(eng, state1, out2, Matrix3)
-
-    Matrix_Mul_upper(eng, out2, out1, Matrix4)
-
-    out3 = eng.allocate_qureg(256)
-    Matrix_Mul_lower(eng, state2, out3, Matrix5)
-
-    Matrix_Mul_upper(eng, out3, out1, Matrix6)
-
-    return out1 # out1 = state[0] + state[1] + state[2]
-
-def Matrix_Mul_lower(eng, input, out, matrix):
-
-    for i in range(256):
-        for j in range(i+1):
-            if ((matrix[i] >> j) & 1):
-                CNOT | (input[j], out[i])
-
-def Matrix_Mul_upper(eng, input, out, matrix):
-    for i in range(256):
-        for j in range(256-i):
-            if ((matrix[i] << j) & 0x8000000000000000000000000000000000000000000000000000000000000000):
-                CNOT | (input[255-j], out[i])
-
-def feedback(eng, input, result):
-
-    for i in range(256):
-        CNOT | (input[i], result[i])
 
 def AIM(eng):
 
@@ -92,6 +47,49 @@ def AIM(eng):
         print_state(eng, out, 64)
 
     #ff6db678 ... cda4
+
+def Round_constant_XOR(eng, k, rc, bit):
+    for i in range(bit):
+        if (rc >> i & 1):
+            X | k[i]
+
+def Matrix_Mul(eng, state0, state1, state2):
+
+    out0 = eng.allocate_qureg(256)
+    Matrix_Mul_lower(eng, state0, out0, Matrix1)
+
+    out1 = eng.allocate_qureg(256)
+    Matrix_Mul_upper(eng, out0, out1, Matrix2)
+
+    out2 = eng.allocate_qureg(256)
+    Matrix_Mul_lower(eng, state1, out2, Matrix3)
+
+    Matrix_Mul_upper(eng, out2, out1, Matrix4)
+
+    out3 = eng.allocate_qureg(256)
+    Matrix_Mul_lower(eng, state2, out3, Matrix5)
+
+    Matrix_Mul_upper(eng, out3, out1, Matrix6)
+
+    return out1 # out1 = state[0] + state[1] + state[2]
+
+def Matrix_Mul_lower(eng, input, out, matrix):
+
+    for i in range(256):
+        for j in range(i+1):
+            if ((matrix[i] >> j) & 1):
+                CNOT | (input[j], out[i])
+
+def Matrix_Mul_upper(eng, input, out, matrix):
+    for i in range(256):
+        for j in range(256-i):
+            if ((matrix[i] << j) & 0x8000000000000000000000000000000000000000000000000000000000000000):
+                CNOT | (input[255-j], out[i])
+
+def feedback(eng, input, result):
+
+    for i in range(256):
+        CNOT | (input[i], result[i])
 
 def mer_exp_3_53_7(eng, input):
 

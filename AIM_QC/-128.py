@@ -3,9 +3,43 @@ from projectq.ops import H, CNOT, Measure, Toffoli, X, All, T, Tdag, S, Swap
 from projectq.backends import CircuitDrawer, ResourceCounter, ClassicalSimulator
 from projectq.meta import Loop, Compute, Uncompute, Control
 from Matrix_128 import Matrix1, Matrix2, Matrix3, Matrix4, vector_b
-
 import math
 
+def AIM(eng):
+
+    n = 128
+    input = eng.allocate_qureg(n)
+    if (resource_check != 1):
+        Round_constant_XOR(eng, input, 0x112233445566778899aabbccddeeff, 128)
+
+    if (resource_check != 1):
+        print('mer_exp_3 & 27 input: ')
+        print_state(eng, input, 32)
+    state0, state1, ancilla = mer_exp_3(eng, input) # Toffoli depth 6
+
+    if (resource_check != 1):
+        print('mer_exp_3 result')
+        print_state(eng, state0, 32)
+
+        print('mer_exp_27 result')
+        print_state(eng, state1, 32)
+
+    out = []
+
+    out= Matrix_Mul(eng, state0, state1)
+
+    if(resource_check != 1):
+        print_state(eng, out, 32)
+
+    Round_constant_XOR(eng, out, vector_b, 128)
+
+    out = mer_exp_5(eng, out, ancilla) # Toffoli depth 3, Total 9, T-depth 36
+
+    # Feed back
+    feedback(eng, input, out)
+    if (resource_check != 1):
+        print('Ciphertext')
+        print_state(eng, out, 32)
 
 def Round_constant_XOR(eng, k, rc, bit):
     for i in range(bit):
@@ -88,42 +122,6 @@ def feedback(eng, input, result):
 
     for i in range(128):
         CNOT | (input[i], result[i])
-
-def AIM(eng):
-
-    n = 128
-    input = eng.allocate_qureg(n)
-    if (resource_check != 1):
-        Round_constant_XOR(eng, input, 0x112233445566778899aabbccddeeff, 128)
-
-    if (resource_check != 1):
-        print('mer_exp_3 & 27 input: ')
-        print_state(eng, input, 32)
-    state0, state1, ancilla = mer_exp_3(eng, input) # Toffoli depth 6
-
-    if (resource_check != 1):
-        print('mer_exp_3 result')
-        print_state(eng, state0, 32)
-
-        print('mer_exp_27 result')
-        print_state(eng, state1, 32)
-
-    out = []
-
-    out= Matrix_Mul(eng, state0, state1)
-
-    if(resource_check != 1):
-        print_state(eng, out, 32)
-
-    Round_constant_XOR(eng, out, vector_b, 128)
-
-    out = mer_exp_5(eng, out, ancilla) # Toffoli depth 3, Total 9, T-depth 36
-
-    # Feed back
-    feedback(eng, input, out)
-    if (resource_check != 1):
-        print('Ciphertext')
-        print_state(eng, out, 32)
 
 def mer_exp_5(eng, input, ancilla):
 
